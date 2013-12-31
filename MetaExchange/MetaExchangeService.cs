@@ -16,9 +16,9 @@ namespace MetaExchange
 
         public double Money { get; set; } = 9000;
 
-        public double Cryptocurrency { get; set; } = 0.1;
+        public double Cryptocurrency { get; set; } = 3;
 
-        public List<OrderBook> OrderBooks { get; } = new();
+        public List<OrderBook> OrderBooks { get; set; } = new();
 
         public void TryReadOrderBooksFile()
         {
@@ -66,12 +66,76 @@ namespace MetaExchange
             }
         }
 
-        public void Buy(double cryptocurrency)
+        public List<(OrderBook orderBook, Order order, double amount)> GetOrders(List<OrderBook> orderBooks, double moneyConstraint, double cryptocurrencyConstraint, Type orderType, double orderAmount)
         {
+            OrderBooks = orderBooks;
+            Money = moneyConstraint;
+            Cryptocurrency = cryptocurrencyConstraint;
+
+            return orderType switch
+            {
+                Type.Buy => Buy(orderAmount),
+                Type.Sell => Sell(orderAmount),
+                _ => throw new ArgumentException("Invalid argument: " + nameof(orderType))
+            };
         }
 
-        public void Sell(double cryptocurrency)
+        public List<(OrderBook orderBook, Order order, double amount)> Buy(double cryptocurrencyToBuy)
         {
+            List<(OrderBook orderBook, Order order, double amount)> orders = new();
+
+            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.AskOrders.Select(order => (orderBook, order))).OrderBy(pair => pair.order.Price))
+            {
+                if (Money > 0 && cryptocurrencyToBuy > 0)
+                {
+                    double amountToBuy = Math.Min(cryptocurrencyToBuy, order.Amount);
+
+                    double amountCanBuy = Math.Min(amountToBuy, Money / order.Price);
+
+                    cryptocurrencyToBuy -= amountCanBuy;
+
+                    Cryptocurrency += amountCanBuy;
+
+                    Money -= amountCanBuy * order.Price;
+
+                    orders.Add((orderBook, order, amountCanBuy));
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return orders;
+        }
+
+        public List<(OrderBook orderBook, Order order, double amount)> Sell(double cryptocurrencyToSell)
+        {
+            List<(OrderBook orderBook, Order order, double amount)> orders = new();
+
+            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.AskOrders.Select(order => (orderBook, order))).OrderByDescending(pair => pair.order.Price))
+            {
+                if (Cryptocurrency > 0 && cryptocurrencyToSell > 0)
+                {
+                    double amountToSell = Math.Min(cryptocurrencyToSell, order.Amount);
+
+                    double amountCanSell = Math.Min(amountToSell, Cryptocurrency);
+
+                    cryptocurrencyToSell -= amountCanSell;
+
+                    Cryptocurrency -= amountCanSell;
+
+                    Money += amountCanSell * order.Price;
+
+                    orders.Add((orderBook, order, amountCanSell));
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return orders;
         }
     }
 }

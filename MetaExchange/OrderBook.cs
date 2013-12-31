@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MetaExchange
 {
@@ -18,5 +19,8 @@ namespace MetaExchange
         public DateTime AcqTime { get; set; }
         public List<Bid> Bids { get; set; } = new();
         public List<Ask> Asks { get; set; } = new();
+
+        public IEnumerable<Order> BidOrders => Bids.Select(bid => bid.Order);
+        public IEnumerable<Order> AskOrders => Asks.Select(bid => bid.Order);
     }
 }

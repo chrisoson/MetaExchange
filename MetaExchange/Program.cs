@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace MetaExchange
 {
@@ -9,10 +10,36 @@ namespace MetaExchange
             MetaExchangeService metaExchange = new();
 
             if (args.Length > 0)
-                metaExchange.OrderBooksFilePath = args[0];
+            {
+                if (File.Exists(args[0]))
+                    metaExchange.OrderBooksFilePath = args[0];
+                else
+                    Console.WriteLine("File not found: " + args[0]);
+            }
 
-            if (args.Length > 1 && int.TryParse(args[1], out int arg))
-                metaExchange.NuberOfOrderBooksToRead = arg;
+            if (args.Length > 1)
+            {
+                if (int.TryParse(args[1], out int nuberOfOrderBooksToRead))
+                    metaExchange.NuberOfOrderBooksToRead = nuberOfOrderBooksToRead;
+                else
+                    Console.WriteLine($"{args[1]} is not a valid number!");
+            }
+
+            if (args.Length > 2)
+            {
+                if (double.TryParse(args[2], out double money))
+                    metaExchange.Money = money;
+                else
+                    Console.WriteLine($"{args[2]} is not a valid number!");
+            }
+
+            if (args.Length > 3)
+            {
+                if (double.TryParse(args[3], out double cryptocurrency))
+                    metaExchange.Cryptocurrency = cryptocurrency;
+                else
+                    Console.WriteLine($"{args[3]} is not a valid number!");
+            }
 
             try
             {
@@ -52,8 +79,7 @@ namespace MetaExchange
                             if (double.TryParse(line, out double money))
                                 metaExchange.Money = money;
                             else
-                                Console.WriteLine("That is not a valid number!");
-
+                                Console.WriteLine($"{line} is not a valid number!");
 
                             Console.WriteLine("Enter cryptocurrency balance:");
                             line = Console.ReadLine() ?? string.Empty;
@@ -61,7 +87,7 @@ namespace MetaExchange
                             if (double.TryParse(line, out double cryptocurrency))
                                 metaExchange.Cryptocurrency = cryptocurrency;
                             else
-                                Console.WriteLine("That is not a valid number!");
+                                Console.WriteLine($"{line} is not a valid number!");
                         }
                         break;
 
@@ -70,10 +96,17 @@ namespace MetaExchange
                             Console.WriteLine("Enter amount of cryptocurrency to buy:");
                             line = Console.ReadLine() ?? string.Empty;
 
-                            if (double.TryParse(line, out double cryptocurrency))
-                                metaExchange.Buy(cryptocurrency);
+                            if (double.TryParse(line, out double cryptocurrencyToBuy))
+                            {
+                                foreach (var (orderBook, order, amount) in metaExchange.Buy(cryptocurrencyToBuy))
+                                {
+                                    Console.WriteLine($"Buy '{amount}' from order with '{order.Id}' ID from order book with '{orderBook.AcqTime}' timestamp.");
+                                }
+                            }
                             else
-                                Console.WriteLine("That is not a valid number!");
+                            {
+                                Console.WriteLine($"{line} is not a valid number!");
+                            }
                         }
                         break;
 
@@ -82,10 +115,17 @@ namespace MetaExchange
                             Console.WriteLine("Enter amount of cryptocurrency to sell:");
                             line = Console.ReadLine() ?? string.Empty;
 
-                            if (double.TryParse(line, out double cryptocurrency))
-                                metaExchange.Sell(cryptocurrency);
+                            if (double.TryParse(line, out double cryptocurrencyToSell))
+                            {
+                                foreach (var (orderBook, order, amount) in metaExchange.Sell(cryptocurrencyToSell))
+                                {
+                                    Console.WriteLine($"Sell '{amount}' from order with '{order.Id}' ID from order book with '{orderBook.AcqTime}' timestamp.");
+                                }
+                            }
                             else
-                                Console.WriteLine("That is not a valid number!");
+                            {
+                                Console.WriteLine($"{line} is not a valid number!");
+                            }
                         }
                         break;
                 }
