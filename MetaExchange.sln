@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31410.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaExchange", "MetaExchange\MetaExchange.csproj", "{3123FF51-E3BF-442E-AC18-D6B1C718A4B4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3123FF51-E3BF-442E-AC18-D6B1C718A4B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3123FF51-E3BF-442E-AC18-D6B1C718A4B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3123FF51-E3BF-442E-AC18-D6B1C718A4B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3123FF51-E3BF-442E-AC18-D6B1C718A4B4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {541EB3BF-8EFA-4AE6-95B5-A0EB01ECEC2B}
+	EndGlobalSection
+EndGlobal
