@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace MetaExchange
 {
@@ -12,71 +6,29 @@ namespace MetaExchange
     {
         static void Main(string[] args)
         {
-            string orderBooksFilePath = @"..\..\..\..\order_books_data.zip";
-
-            int nuberOfOrderBooksToRead = 10;
+            MetaExchangeService metaExchange = new();
 
             if (args.Length > 0)
-                orderBooksFilePath = args[0];
+                metaExchange.OrderBooksFilePath = args[0];
 
             if (args.Length > 1 && int.TryParse(args[1], out int arg))
-                nuberOfOrderBooksToRead = arg;
+                metaExchange.NuberOfOrderBooksToRead = arg;
 
-            if (!File.Exists(orderBooksFilePath))
+            try
             {
-                Console.WriteLine("File not found: " + orderBooksFilePath);
+                metaExchange.TryReadOrderBooksFile();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
                 return;
             }
-
-            if (Path.GetExtension(orderBooksFilePath) == ".zip")
-            {
-                using ZipArchive archive = ZipFile.OpenRead(orderBooksFilePath);
-
-                if (archive.Entries.Count == 1)
-                {
-                    ZipArchiveEntry archiveEntry = archive.Entries.First();
-                    string extractPath = @".\";
-                    orderBooksFilePath = Path.Combine(extractPath, archiveEntry.FullName);
-                    archiveEntry.ExtractToFile(orderBooksFilePath, overwrite: true);
-                }
-                else
-                {
-                    Console.WriteLine("Zip file does not contain a single file: " + orderBooksFilePath);
-                    return;
-                }
-            }
-
-            List<OrderBook> OrderBooks = new();
-
-            foreach (string line in File.ReadLines(orderBooksFilePath))
-            {
-                int first = line.IndexOf('{');
-                int last = line.LastIndexOf('}');
-
-                if (first == -1 || last == -1)
-                {
-                    Console.WriteLine("No JSON found in file: " + orderBooksFilePath);
-                    return;
-                }
-
-                string jsonString = line[first..++last];
-
-                OrderBook? orderBook = JsonSerializer.Deserialize<OrderBook>(jsonString, new JsonSerializerOptions { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
-
-                if (orderBook != null)
-                    OrderBooks.Add(orderBook);
-
-                if (OrderBooks.Count == nuberOfOrderBooksToRead)
-                    break;
-            }
-
-            Balance balance = new() { Money = 9000, Cryptocurrency = 0.1 };
 
             ConsoleKeyInfo consoleKeyInfo;
 
             do
             {
-                Console.WriteLine($"Money: {balance.Money}, Cryptocurrency {balance.Cryptocurrency}");
+                Console.WriteLine($"Money: {metaExchange.Money}, Cryptocurrency {metaExchange.Cryptocurrency}");
 
                 Console.WriteLine("Press Escape to quit");
                 Console.WriteLine("Press C to enter balance constraints");
@@ -87,7 +39,7 @@ namespace MetaExchange
 
                 Console.WriteLine();
 
-                string line = string.Empty;
+                string line;
 
                 switch (consoleKeyInfo.Key)
                 {
@@ -96,12 +48,12 @@ namespace MetaExchange
                         Console.WriteLine("Enter money balance:");
                         line = Console.ReadLine() ?? string.Empty;
                         if (double.TryParse(line, out double money))
-                            balance.Money = money;
+                            metaExchange.Money = money;
 
                         Console.WriteLine("Enter cryptocurrency balance:");
                         line = Console.ReadLine() ?? string.Empty;
                         if (double.TryParse(line, out double cryptocurrency))
-                            balance.Cryptocurrency = cryptocurrency;
+                            metaExchange.Cryptocurrency = cryptocurrency;
 
                         break;
 
