@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Text.Json;
 
 namespace MetaExchange.Tests
@@ -10,20 +9,33 @@ namespace MetaExchange.Tests
     [TestClass()]
     public class MetaExchangeServiceTests
     {
-        readonly OrderBook orderBook = new()
+        readonly OrderBook _orderBookOdd = new()
         {
             AcqTime = DateTime.Now,
             Bids = new()
             {
-                new() { Order = new() { Id = 1, Time = DateTime.Now, Type = Type.Buy, Kind = Kind.Limit, Amount = 1, Price = 3010 } },
-                new() { Order = new() { Id = 2, Time = DateTime.Now, Type = Type.Buy, Kind = Kind.Limit, Amount = 2, Price = 3020 } },
-                new() { Order = new() { Id = 3, Time = DateTime.Now, Type = Type.Buy, Kind = Kind.Limit, Amount = 3, Price = 3030 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Buy, Kind = Kind.Limit, Amount = 1, Price = 3010 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Buy, Kind = Kind.Limit, Amount = 3, Price = 3030 } },
             },
             Asks = new()
             {
-                new() { Order = new() { Id = 4, Time = DateTime.Now, Type = Type.Sell, Kind = Kind.Limit, Amount = 1, Price = 3060 } },
-                new() { Order = new() { Id = 5, Time = DateTime.Now, Type = Type.Sell, Kind = Kind.Limit, Amount = 2, Price = 3050 } },
-                new() { Order = new() { Id = 6, Time = DateTime.Now, Type = Type.Sell, Kind = Kind.Limit, Amount = 3, Price = 3040 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Sell, Kind = Kind.Limit, Amount = 1, Price = 3070 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Sell, Kind = Kind.Limit, Amount = 3, Price = 3050 } },
+            }
+        };
+
+        readonly OrderBook _orderBookEven = new()
+        {
+            AcqTime = DateTime.Now,
+            Bids = new()
+            {
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Buy, Kind = Kind.Limit, Amount = 2, Price = 3020 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Buy, Kind = Kind.Limit, Amount = 4, Price = 3040 } },
+            },
+            Asks = new()
+            {
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Sell, Kind = Kind.Limit, Amount = 2, Price = 3080 } },
+                new() { Order = new() { Id = null, Time = DateTime.MinValue, Type = Type.Sell, Kind = Kind.Limit, Amount = 4, Price = 3060 } },
             }
         };
 
@@ -63,7 +75,7 @@ namespace MetaExchange.Tests
         public void TryReadOrderBooksFileTest()
         {
             string fileName = "test.json";
-            string jsonString = JsonSerializer.Serialize(orderBook);
+            string jsonString = JsonSerializer.Serialize(_orderBookOdd);
             File.WriteAllText(fileName, jsonString);
 
             MetaExchangeService metaExchange = new()
@@ -74,8 +86,8 @@ namespace MetaExchange.Tests
             metaExchange.TryReadOrderBooksFile();
 
             Assert.IsTrue(metaExchange.CryptoExchanges.Count == 1);
-            Assert.AreEqual(metaExchange.CryptoExchanges.First().OrderBook.Bids.Count, orderBook.Bids.Count);
-            Assert.AreEqual(metaExchange.CryptoExchanges.First().OrderBook.Asks.Count, orderBook.Asks.Count);
+            Assert.AreEqual(metaExchange.CryptoExchanges[0].OrderBook.Bids.Count, _orderBookOdd.Bids.Count);
+            Assert.AreEqual(metaExchange.CryptoExchanges[0].OrderBook.Asks.Count, _orderBookOdd.Asks.Count);
         }
 
         [TestMethod]
@@ -85,12 +97,8 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
@@ -98,9 +106,11 @@ namespace MetaExchange.Tests
 
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount == 1);
-            Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 - 3040);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 4);
+            Assert.IsTrue(result[0].order.Price == 3050);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 - 3050);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 4);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -110,12 +120,8 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 90000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 90000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 90000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
@@ -123,11 +129,13 @@ namespace MetaExchange.Tests
 
             Assert.IsTrue(result.Count == 2);
             Assert.IsTrue(result[0].amount == 3);
-            Assert.IsTrue(result[0].order.Price == 3040);
+            Assert.IsTrue(result[0].order.Price == 3050);
             Assert.IsTrue(result[1].amount == 1);
-            Assert.IsTrue(result[1].order.Price == 3050);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 90000 - (3 * 3040) - (1 * 3050));
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 7);
+            Assert.IsTrue(result[1].order.Price == 3060);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 90000 - (3 * 3050));
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 6);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 90000 - (1 * 3060));
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 4);
         }
 
         [TestMethod]
@@ -137,22 +145,24 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 3000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 90000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Buy(1);
+            var result = metaExchange.Buy(8);
 
-            Assert.IsTrue(result.Count == 1);
-            Assert.IsTrue(result[0].amount < 1);
-            Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 0);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency > 3);
+            Assert.IsTrue(result.Count == 3);
+            Assert.IsTrue(result[0].amount < 3);
+            Assert.IsTrue(result[0].order.Price == 3050);
+            Assert.IsTrue(result[1].amount == 4);
+            Assert.IsTrue(result[1].order.Price == 3060);
+            Assert.IsTrue(result[2].amount > 0);
+            Assert.IsTrue(result[2].order.Price == 3080);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 0);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency < 6);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money < 90000 - (4 * 3060));
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency > 7);
         }
 
         [TestMethod]
@@ -162,26 +172,26 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 90000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 90000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 90000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Buy(7);
+            var result = metaExchange.Buy(11);
 
-            Assert.IsTrue(result.Count == 3);
+            Assert.IsTrue(result.Count == 4);
             Assert.IsTrue(result[0].amount == 3);
-            Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(result[1].amount == 2);
-            Assert.IsTrue(result[1].order.Price == 3050);
+            Assert.IsTrue(result[0].order.Price == 3050);
+            Assert.IsTrue(result[1].amount == 4);
+            Assert.IsTrue(result[1].order.Price == 3060);
             Assert.IsTrue(result[2].amount == 1);
-            Assert.IsTrue(result[2].order.Price == 3060);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 90000 - (3 * 3040) - (2 * 3050) - (1 * 3060));
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 9);
+            Assert.IsTrue(result[2].order.Price == 3070);
+            Assert.IsTrue(result[3].amount == 2);
+            Assert.IsTrue(result[3].order.Price == 3080);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 90000 - (3 * 3050) - (1 * 3070));
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 7);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 90000 - (4 * 3060) - (2 * 3080));
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 9);
         }
 
         [TestMethod]
@@ -191,20 +201,18 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
             var result = metaExchange.Buy(0);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -214,20 +222,18 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
             var result = metaExchange.Buy(-1);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -237,12 +243,8 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
@@ -250,9 +252,11 @@ namespace MetaExchange.Tests
 
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount == 1);
-            Assert.IsTrue(result[0].order.Price == 3030);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + 3030);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 2);
+            Assert.IsTrue(result[0].order.Price == 3040);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000 + 3040);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 2);
         }
 
         [TestMethod]
@@ -262,24 +266,22 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 9,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 9, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 9, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Sell(4);
+            var result = metaExchange.Sell(5);
 
             Assert.IsTrue(result.Count == 2);
-            Assert.IsTrue(result[0].amount == 3);
-            Assert.IsTrue(result[0].order.Price == 3030);
+            Assert.IsTrue(result[0].amount == 4);
+            Assert.IsTrue(result[0].order.Price == 3040);
             Assert.IsTrue(result[1].amount == 1);
-            Assert.IsTrue(result[1].order.Price == 3020);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + (3 * 3030) + (1 * 3020));
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 5);
+            Assert.IsTrue(result[1].order.Price == 3030);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 + (1 * 3030));
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 8);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000 + (4 * 3040));
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 5);
         }
 
         [TestMethod]
@@ -289,22 +291,22 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 1,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 1, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 1, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Sell(2);
+            var result = metaExchange.Sell(3);
 
-            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result.Count == 2);
             Assert.IsTrue(result[0].amount == 1);
-            Assert.IsTrue(result[0].order.Price == 3030);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + 3030);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 0);
+            Assert.IsTrue(result[0].order.Price == 3040);
+            Assert.IsTrue(result[1].amount == 1);
+            Assert.IsTrue(result[1].order.Price == 3030);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 + 3030);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 0);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000 + 3040);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 0);
         }
 
         [TestMethod]
@@ -314,26 +316,26 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 9,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 9, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 9, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Sell(7);
+            var result = metaExchange.Sell(11);
 
-            Assert.IsTrue(result.Count == 3);
-            Assert.IsTrue(result[0].amount == 3);
-            Assert.IsTrue(result[0].order.Price == 3030);
-            Assert.IsTrue(result[1].amount == 2);
-            Assert.IsTrue(result[1].order.Price == 3020);
-            Assert.IsTrue(result[2].amount == 1);
-            Assert.IsTrue(result[2].order.Price == 3010);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + (3 * 3030) + (2 * 3020) + (1 * 3010));
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
+            Assert.IsTrue(result.Count == 4);
+            Assert.IsTrue(result[0].amount == 4);
+            Assert.IsTrue(result[0].order.Price == 3040);
+            Assert.IsTrue(result[1].amount == 3);
+            Assert.IsTrue(result[1].order.Price == 3030);
+            Assert.IsTrue(result[2].amount == 2);
+            Assert.IsTrue(result[2].order.Price == 3020);
+            Assert.IsTrue(result[3].amount == 1);
+            Assert.IsTrue(result[3].order.Price == 3010);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 + (3 * 3030) + (1 * 3010));
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 5);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000 + (4 * 3040) + (2 * 3020));
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -343,20 +345,18 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
             var result = metaExchange.Sell(0);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -366,20 +366,18 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new()
-                    {
-                        Money = 9000,
-                        Cryptocurrency = 3,
-                        OrderBook = orderBook
-                    }
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 3, OrderBook = _orderBookEven },
                 }
             };
 
             var result = metaExchange.Sell(-1);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
-            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 3);
         }
     }
 }

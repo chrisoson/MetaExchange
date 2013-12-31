@@ -92,10 +92,6 @@ namespace MetaExchange
 
                     orders.Add((cryptoExchange, order, amountCanBuy));
                 }
-                else
-                {
-                    break;
-                }
             }
 
             return orders;
@@ -120,10 +116,6 @@ namespace MetaExchange
                     cryptoExchange.Money += amountCanSell * order.Price;
 
                     orders.Add((cryptoExchange, order, amountCanSell));
-                }
-                else
-                {
-                    break;
                 }
             }
 
