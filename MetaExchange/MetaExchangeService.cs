@@ -113,7 +113,7 @@ namespace MetaExchange
         {
             List<(OrderBook orderBook, Order order, double amount)> orders = new();
 
-            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.AskOrders.Select(order => (orderBook, order))).OrderByDescending(pair => pair.order.Price))
+            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.BidOrders.Select(order => (orderBook, order))).OrderByDescending(pair => pair.order.Price))
             {
                 if (Cryptocurrency > 0 && cryptocurrencyToSell > 0)
                 {
