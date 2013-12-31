@@ -12,13 +12,11 @@ namespace MetaExchange
     {
         public string OrderBooksFilePath { get; set; } = @"..\..\..\..\order_books_data.zip";
 
-        public int NuberOfOrderBooksToRead { get; set; } = 10;
+        public int NuberOfOrderBooksToRead { get; set; } = 3;
 
-        public double Money { get; set; } = 9000;
+        public List<CryptoExchange> CryptoExchanges { get; set; } = new();
 
-        public double Cryptocurrency { get; set; } = 3;
-
-        public List<OrderBook> OrderBooks { get; set; } = new();
+        private readonly Random _random = new();
 
         public void TryReadOrderBooksFile()
         {
@@ -59,46 +57,40 @@ namespace MetaExchange
                 OrderBook? orderBook = JsonSerializer.Deserialize<OrderBook>(jsonString, new JsonSerializerOptions { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
 
                 if (orderBook != null)
-                    OrderBooks.Add(orderBook);
+                {
+                    CryptoExchanges.Add(new CryptoExchange
+                    {
+                        Id = CryptoExchanges.Count, 
+                        Money = _random.Next(3000, 9000),
+                        Cryptocurrency = _random.Next(3, 9),
+                        OrderBook = orderBook
+                    });
+                }
 
-                if (OrderBooks.Count == NuberOfOrderBooksToRead)
+                if (CryptoExchanges.Count == NuberOfOrderBooksToRead)
                     break;
             }
         }
 
-        public List<(OrderBook orderBook, Order order, double amount)> GetOrders(List<OrderBook> orderBooks, double moneyConstraint, double cryptocurrencyConstraint, Type orderType, double orderAmount)
+        public List<(CryptoExchange cryptoExchange, Order order, double amount)> Buy(double cryptocurrencyToBuy)
         {
-            OrderBooks = orderBooks;
-            Money = moneyConstraint;
-            Cryptocurrency = cryptocurrencyConstraint;
+            List<(CryptoExchange cryptoExchange, Order order, double amount)> orders = new();
 
-            return orderType switch
+            foreach (var (cryptoExchange, order) in CryptoExchanges.SelectMany(cryptoExchange => cryptoExchange.OrderBook.AskOrders.Select(order => (cryptoExchange, order))).OrderBy(pair => pair.order.Price))
             {
-                Type.Buy => Buy(orderAmount),
-                Type.Sell => Sell(orderAmount),
-                _ => throw new ArgumentException("Invalid argument: " + nameof(orderType))
-            };
-        }
-
-        public List<(OrderBook orderBook, Order order, double amount)> Buy(double cryptocurrencyToBuy)
-        {
-            List<(OrderBook orderBook, Order order, double amount)> orders = new();
-
-            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.AskOrders.Select(order => (orderBook, order))).OrderBy(pair => pair.order.Price))
-            {
-                if (Money > 0 && cryptocurrencyToBuy > 0)
+                if (cryptoExchange.Money > 0 && cryptocurrencyToBuy > 0)
                 {
                     double amountToBuy = Math.Min(cryptocurrencyToBuy, order.Amount);
 
-                    double amountCanBuy = Math.Min(amountToBuy, Money / order.Price);
+                    double amountCanBuy = Math.Min(amountToBuy, cryptoExchange.Money / order.Price);
 
                     cryptocurrencyToBuy -= amountCanBuy;
 
-                    Cryptocurrency += amountCanBuy;
+                    cryptoExchange.Cryptocurrency += amountCanBuy;
 
-                    Money -= amountCanBuy * order.Price;
+                    cryptoExchange.Money -= amountCanBuy * order.Price;
 
-                    orders.Add((orderBook, order, amountCanBuy));
+                    orders.Add((cryptoExchange, order, amountCanBuy));
                 }
                 else
                 {
@@ -109,25 +101,25 @@ namespace MetaExchange
             return orders;
         }
 
-        public List<(OrderBook orderBook, Order order, double amount)> Sell(double cryptocurrencyToSell)
+        public List<(CryptoExchange cryptoExchange, Order order, double amount)> Sell(double cryptocurrencyToSell)
         {
-            List<(OrderBook orderBook, Order order, double amount)> orders = new();
+            List<(CryptoExchange cryptoExchange, Order order, double amount)> orders = new();
 
-            foreach (var (orderBook, order) in OrderBooks.SelectMany(orderBook => orderBook.BidOrders.Select(order => (orderBook, order))).OrderByDescending(pair => pair.order.Price))
+            foreach (var (cryptoExchange, order) in CryptoExchanges.SelectMany(cryptoExchange => cryptoExchange.OrderBook.BidOrders.Select(order => (cryptoExchange, order))).OrderByDescending(pair => pair.order.Price))
             {
-                if (Cryptocurrency > 0 && cryptocurrencyToSell > 0)
+                if (cryptoExchange.Cryptocurrency > 0 && cryptocurrencyToSell > 0)
                 {
                     double amountToSell = Math.Min(cryptocurrencyToSell, order.Amount);
 
-                    double amountCanSell = Math.Min(amountToSell, Cryptocurrency);
+                    double amountCanSell = Math.Min(amountToSell, cryptoExchange.Cryptocurrency);
 
                     cryptocurrencyToSell -= amountCanSell;
 
-                    Cryptocurrency -= amountCanSell;
+                    cryptoExchange.Cryptocurrency -= amountCanSell;
 
-                    Money += amountCanSell * order.Price;
+                    cryptoExchange.Money += amountCanSell * order.Price;
 
-                    orders.Add((orderBook, order, amountCanSell));
+                    orders.Add((cryptoExchange, order, amountCanSell));
                 }
                 else
                 {

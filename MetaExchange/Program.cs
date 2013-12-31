@@ -25,22 +25,6 @@ namespace MetaExchange
                     Console.WriteLine($"{args[1]} is not a valid number!");
             }
 
-            if (args.Length > 2)
-            {
-                if (double.TryParse(args[2], out double money))
-                    metaExchange.Money = money;
-                else
-                    Console.WriteLine($"{args[2]} is not a valid number!");
-            }
-
-            if (args.Length > 3)
-            {
-                if (double.TryParse(args[3], out double cryptocurrency))
-                    metaExchange.Cryptocurrency = cryptocurrency;
-                else
-                    Console.WriteLine($"{args[3]} is not a valid number!");
-            }
-
             try
             {
                 metaExchange.TryReadOrderBooksFile();
@@ -57,9 +41,7 @@ namespace MetaExchange
             {
                 Console.WriteLine();
 
-                Console.WriteLine($"Money: {metaExchange.Money}, Cryptocurrency: {metaExchange.Cryptocurrency}");
                 Console.WriteLine("Press Escape to quit");
-                Console.WriteLine("Press C to enter balance constraints");
                 Console.WriteLine("Press B to buy");
                 Console.WriteLine("Press S to sell");
 
@@ -71,26 +53,6 @@ namespace MetaExchange
 
                 switch (consoleKeyInfo.Key)
                 {
-                    case ConsoleKey.C:
-                        {
-                            Console.WriteLine("Enter money balance:");
-                            line = Console.ReadLine() ?? string.Empty;
-
-                            if (double.TryParse(line, out double money))
-                                metaExchange.Money = money;
-                            else
-                                Console.WriteLine($"{line} is not a valid number!");
-
-                            Console.WriteLine("Enter cryptocurrency balance:");
-                            line = Console.ReadLine() ?? string.Empty;
-
-                            if (double.TryParse(line, out double cryptocurrency))
-                                metaExchange.Cryptocurrency = cryptocurrency;
-                            else
-                                Console.WriteLine($"{line} is not a valid number!");
-                        }
-                        break;
-
                     case ConsoleKey.B:
                         {
                             Console.WriteLine("Enter amount of cryptocurrency to buy:");
@@ -98,9 +60,9 @@ namespace MetaExchange
 
                             if (double.TryParse(line, out double cryptocurrencyToBuy))
                             {
-                                foreach (var (orderBook, order, amount) in metaExchange.Buy(cryptocurrencyToBuy))
+                                foreach (var (cryptoExchange, order, amount) in metaExchange.Buy(cryptocurrencyToBuy))
                                 {
-                                    Console.WriteLine($"Buy '{amount}' from order (ID '{order.Id}') from order book (time '{orderBook.AcqTime}')");
+                                    Console.WriteLine($"Buy '{amount}' at price of '{order.Price}' from crypto exchange ID '{cryptoExchange.Id}'");
                                 }
                             }
                             else
@@ -117,9 +79,9 @@ namespace MetaExchange
 
                             if (double.TryParse(line, out double cryptocurrencyToSell))
                             {
-                                foreach (var (orderBook, order, amount) in metaExchange.Sell(cryptocurrencyToSell))
+                                foreach (var (cryptoExchange, order, amount) in metaExchange.Sell(cryptocurrencyToSell))
                                 {
-                                    Console.WriteLine($"Sell '{amount}' from order (ID '{order.Id}') from order book (time '{orderBook.AcqTime}')");
+                                    Console.WriteLine($"Sell '{amount}' at price of '{order.Price}' from crypto exchange ID '{cryptoExchange.Id}'");
                                 }
                             }
                             else

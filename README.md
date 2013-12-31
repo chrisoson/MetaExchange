@@ -2,4 +2,4 @@
 
 Usage from command line:
 
-    MetaExchange.exe OrderBooksFilePath NuberOfOrderBooksToRead MoneyConstraint CryptocurrencyConstraint
+    MetaExchange.exe OrderBooksFilePath NuberOfOrderBooksToRead

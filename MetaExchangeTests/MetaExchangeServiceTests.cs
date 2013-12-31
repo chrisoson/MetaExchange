@@ -31,8 +31,11 @@ namespace MetaExchange.Tests
         [ExpectedException(typeof(FileNotFoundException))]
         public void TryReadOrderBooksFileTest_FileNotFoundException()
         {
-            MetaExchangeService metaExchange = new();
-            metaExchange.OrderBooksFilePath = string.Empty;
+            MetaExchangeService metaExchange = new()
+            {
+                OrderBooksFilePath = string.Empty,
+                NuberOfOrderBooksToRead = 1
+            };
             metaExchange.TryReadOrderBooksFile();
         }
 
@@ -48,8 +51,11 @@ namespace MetaExchange.Tests
             ZipArchive zip = ZipFile.Open(zipFile, ZipArchiveMode.Create);
             zip.Dispose();
 
-            MetaExchangeService metaExchange = new();
-            metaExchange.OrderBooksFilePath = zipFile;
+            MetaExchangeService metaExchange = new()
+            {
+                OrderBooksFilePath = zipFile,
+                NuberOfOrderBooksToRead = 1
+            };
             metaExchange.TryReadOrderBooksFile();
         }
 
@@ -60,13 +66,16 @@ namespace MetaExchange.Tests
             string jsonString = JsonSerializer.Serialize(orderBook);
             File.WriteAllText(fileName, jsonString);
 
-            MetaExchangeService metaExchange = new();
-            metaExchange.OrderBooksFilePath = fileName;
+            MetaExchangeService metaExchange = new()
+            {
+                OrderBooksFilePath = fileName,
+                NuberOfOrderBooksToRead = 1
+            };
             metaExchange.TryReadOrderBooksFile();
 
-            Assert.IsTrue(metaExchange.OrderBooks.Count == 1);
-            Assert.AreEqual(metaExchange.OrderBooks.First().Bids.Count, orderBook.Bids.Count);
-            Assert.AreEqual(metaExchange.OrderBooks.First().Asks.Count, orderBook.Asks.Count);
+            Assert.IsTrue(metaExchange.CryptoExchanges.Count == 1);
+            Assert.AreEqual(metaExchange.CryptoExchanges.First().OrderBook.Bids.Count, orderBook.Bids.Count);
+            Assert.AreEqual(metaExchange.CryptoExchanges.First().OrderBook.Asks.Count, orderBook.Asks.Count);
         }
 
         [TestMethod]
@@ -74,9 +83,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(1);
@@ -84,8 +99,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount == 1);
             Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(metaExchange.Money == 9000 - 3040);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 4);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 - 3040);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 4);
         }
 
         [TestMethod]
@@ -93,9 +108,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 90000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 90000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(4);
@@ -105,8 +126,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result[0].order.Price == 3040);
             Assert.IsTrue(result[1].amount == 1);
             Assert.IsTrue(result[1].order.Price == 3050);
-            Assert.IsTrue(metaExchange.Money == 90000 - (3 * 3040) - (1 * 3050));
-            Assert.IsTrue(metaExchange.Cryptocurrency == 7);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 90000 - (3 * 3040) - (1 * 3050));
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 7);
         }
 
         [TestMethod]
@@ -114,9 +135,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 3000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 3000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(1);
@@ -124,8 +151,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount < 1);
             Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(metaExchange.Money == 0);
-            Assert.IsTrue(metaExchange.Cryptocurrency > 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 0);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency > 3);
         }
 
         [TestMethod]
@@ -133,9 +160,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 90000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 90000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(7);
@@ -147,8 +180,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result[1].order.Price == 3050);
             Assert.IsTrue(result[2].amount == 1);
             Assert.IsTrue(result[2].order.Price == 3060);
-            Assert.IsTrue(metaExchange.Money == 90000 - (3 * 3040) - (2 * 3050) - (1 * 3060));
-            Assert.IsTrue(metaExchange.Cryptocurrency == 9);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 90000 - (3 * 3040) - (2 * 3050) - (1 * 3060));
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 9);
         }
 
         [TestMethod]
@@ -156,16 +189,22 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(0);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.Money == 9000);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -173,16 +212,22 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Buy(-1);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.Money == 9000);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -190,9 +235,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(1);
@@ -200,8 +251,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount == 1);
             Assert.IsTrue(result[0].order.Price == 3030);
-            Assert.IsTrue(metaExchange.Money == 9000 + 3030);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 2);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + 3030);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 2);
         }
 
         [TestMethod]
@@ -209,9 +260,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 9,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 9,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(4);
@@ -221,8 +278,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result[0].order.Price == 3030);
             Assert.IsTrue(result[1].amount == 1);
             Assert.IsTrue(result[1].order.Price == 3020);
-            Assert.IsTrue(metaExchange.Money == 9000 + (3 * 3030) + (1 * 3020));
-            Assert.IsTrue(metaExchange.Cryptocurrency == 5);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + (3 * 3030) + (1 * 3020));
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 5);
         }
 
         [TestMethod]
@@ -230,9 +287,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 1,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 1,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(2);
@@ -240,8 +303,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].amount == 1);
             Assert.IsTrue(result[0].order.Price == 3030);
-            Assert.IsTrue(metaExchange.Money == 9000 + 3030);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 0);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + 3030);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 0);
         }
 
         [TestMethod]
@@ -249,9 +312,15 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 9,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 9,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(7);
@@ -263,8 +332,8 @@ namespace MetaExchange.Tests
             Assert.IsTrue(result[1].order.Price == 3020);
             Assert.IsTrue(result[2].amount == 1);
             Assert.IsTrue(result[2].order.Price == 3010);
-            Assert.IsTrue(metaExchange.Money == 9000 + (3 * 3030) + (2 * 3020) + (1 * 3010));
-            Assert.IsTrue(metaExchange.Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000 + (3 * 3030) + (2 * 3020) + (1 * 3010));
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -272,16 +341,22 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(0);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.Money == 9000);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
         }
 
         [TestMethod]
@@ -289,16 +364,22 @@ namespace MetaExchange.Tests
         {
             MetaExchangeService metaExchange = new()
             {
-                Money = 9000,
-                Cryptocurrency = 3,
-                OrderBooks = new() { orderBook }
+                CryptoExchanges = new()
+                {
+                    new()
+                    {
+                        Money = 9000,
+                        Cryptocurrency = 3,
+                        OrderBook = orderBook
+                    }
+                }
             };
 
             var result = metaExchange.Sell(-1);
 
             Assert.IsTrue(result.Count == 0);
-            Assert.IsTrue(metaExchange.Money == 9000);
-            Assert.IsTrue(metaExchange.Cryptocurrency == 3);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Money == 9000);
+            Assert.IsTrue(metaExchange.CryptoExchanges.First().Cryptocurrency == 3);
         }
     }
 }
