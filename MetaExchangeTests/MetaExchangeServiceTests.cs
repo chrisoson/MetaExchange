@@ -291,19 +291,21 @@ namespace MetaExchange.Tests
             {
                 CryptoExchanges = new()
                 {
-                    new() { Money = 9000, Cryptocurrency = 1, OrderBook = _orderBookOdd },
+                    new() { Money = 9000, Cryptocurrency = 4, OrderBook = _orderBookOdd },
                     new() { Money = 9000, Cryptocurrency = 1, OrderBook = _orderBookEven },
                 }
             };
 
-            var result = metaExchange.Sell(3);
+            var result = metaExchange.Sell(6);
 
-            Assert.IsTrue(result.Count == 2);
+            Assert.IsTrue(result.Count == 3);
             Assert.IsTrue(result[0].amount == 1);
             Assert.IsTrue(result[0].order.Price == 3040);
-            Assert.IsTrue(result[1].amount == 1);
+            Assert.IsTrue(result[1].amount == 3);
             Assert.IsTrue(result[1].order.Price == 3030);
-            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 + 3030);
+            Assert.IsTrue(result[2].amount == 1);
+            Assert.IsTrue(result[2].order.Price == 3010);
+            Assert.IsTrue(metaExchange.CryptoExchanges[0].Money == 9000 + (3 * 3030) + 3010);
             Assert.IsTrue(metaExchange.CryptoExchanges[0].Cryptocurrency == 0);
             Assert.IsTrue(metaExchange.CryptoExchanges[1].Money == 9000 + 3040);
             Assert.IsTrue(metaExchange.CryptoExchanges[1].Cryptocurrency == 0);
