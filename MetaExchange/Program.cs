@@ -100,7 +100,7 @@ namespace MetaExchange
                             {
                                 foreach (var (orderBook, order, amount) in metaExchange.Buy(cryptocurrencyToBuy))
                                 {
-                                    Console.WriteLine($"Buy '{amount}' from order with '{order.Id}' ID from order book with '{orderBook.AcqTime}' timestamp.");
+                                    Console.WriteLine($"Buy '{amount}' from order (ID '{order.Id}') from order book (time '{orderBook.AcqTime}')");
                                 }
                             }
                             else
@@ -119,7 +119,7 @@ namespace MetaExchange
                             {
                                 foreach (var (orderBook, order, amount) in metaExchange.Sell(cryptocurrencyToSell))
                                 {
-                                    Console.WriteLine($"Sell '{amount}' from order with '{order.Id}' ID from order book with '{orderBook.AcqTime}' timestamp.");
+                                    Console.WriteLine($"Sell '{amount}' from order (ID '{order.Id}') from order book (time '{orderBook.AcqTime}')");
                                 }
                             }
                             else
