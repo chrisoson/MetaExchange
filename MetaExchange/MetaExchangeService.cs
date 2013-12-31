@@ -18,6 +18,8 @@ namespace MetaExchange
 
         public double Cryptocurrency { get; set; } = 0.1;
 
+        public List<OrderBook> OrderBooks { get; } = new();
+
         public void TryReadOrderBooksFile()
         {
             if (!File.Exists(OrderBooksFilePath))
@@ -42,8 +44,6 @@ namespace MetaExchange
                 }
             }
 
-            List<OrderBook> OrderBooks = new();
-
             foreach (string line in File.ReadLines(OrderBooksFilePath))
             {
                 int first = line.IndexOf('{');
@@ -64,6 +64,14 @@ namespace MetaExchange
                 if (OrderBooks.Count == NuberOfOrderBooksToRead)
                     break;
             }
+        }
+
+        public void Buy(double cryptocurrency)
+        {
+        }
+
+        public void Sell(double cryptocurrency)
+        {
         }
     }
 }
