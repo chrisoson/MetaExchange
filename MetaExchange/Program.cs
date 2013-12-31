@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace MetaExchange
 {
@@ -41,6 +42,7 @@ namespace MetaExchange
             {
                 Console.WriteLine();
 
+                Console.WriteLine($"Money: {metaExchange.CryptoExchanges.Sum(ce => ce.Money)}, Cryptocurrency: {metaExchange.CryptoExchanges.Sum(ce => ce.Cryptocurrency)}");
                 Console.WriteLine("Press Escape to quit");
                 Console.WriteLine("Press B to buy");
                 Console.WriteLine("Press S to sell");
